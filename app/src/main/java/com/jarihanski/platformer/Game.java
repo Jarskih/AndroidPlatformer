@@ -5,6 +5,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -30,9 +32,9 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
     private LevelManager _levelManager = null;
     private Matrix _transform = new Matrix();
 
-    ViewPort _camera = null;
-    private static final float METERS_TO_SHOW_X = 0f; //set the value you want fixed
-    private static final float METERS_TO_SHOW_Y = 9f;  //the other is calculated at runtime!
+    private ViewPort _camera = null;
+    private static final float METERS_TO_SHOW_X = 16f; //set the value you want fixed
+    private static final float METERS_TO_SHOW_Y = 0f;  //the other is calculated at runtime!
 
     public Game(Context context) {
         super(context);
@@ -44,8 +46,9 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
         _paint = new Paint();
         Entity._game = this;
 
-        _levelManager = new LevelManager(new TestLevel());
         _camera = new ViewPort(1280, 720, METERS_TO_SHOW_X, METERS_TO_SHOW_Y);
+        _levelManager = new LevelManager(new TestLevel());
+
 
         Log.d(TAG, "Game created!");
     }
@@ -69,6 +72,8 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
             return;
         }
 
+        _camera.lookAt(_levelManager._player);
+
         for (Entity e: _levelManager.GetEntities()) {
             e.update(dt);
         }
@@ -77,6 +82,7 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
         checkGameOver();
     }
 
+    final static Point _pos = new Point();
     private void render() {
         //acquire and lock the canvas
         if (!acquireAndLockCanvas()) {
@@ -88,8 +94,8 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
             _canvas.drawColor(BACKGROUND_COLOR); //clear the screen
             for (Entity e : _levelManager.GetEntities()) {
                 _transform.reset();
-                Utils.Vec2 _pos = Utils.worldToScreen(e._x, e._y);
-                _transform.postTranslate(_pos._x, _pos._y);
+                _camera.worldToScreen(e, _pos);
+                _transform.postTranslate(_pos.x, _pos.y);
                 e.render(_canvas, _transform, _paint);
             }
         } finally {
@@ -104,6 +110,10 @@ public class Game extends SurfaceView implements Runnable, SurfaceHolder.Callbac
         }
         _canvas = _holder.lockCanvas();
         return (_canvas != null);
+    }
+
+    public Point worldToScreen(final float width, final float height) {
+        return new Point((int)width * _camera.getPixelsPerMeterX(), (int)height * _camera.getPixelsPerMeterY());
     }
 
     private void checkGameOver() {

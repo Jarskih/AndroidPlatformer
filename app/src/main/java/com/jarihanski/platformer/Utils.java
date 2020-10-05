@@ -1,4 +1,7 @@
 package com.jarihanski.platformer;
+
+import android.graphics.PointF;
+
 public abstract class Utils {
 
     static float clamp(float val, final float min, final float max) {
@@ -17,10 +20,6 @@ public abstract class Utils {
             val = (float) 0;
         }
         return val;
-    }
-
-    static Vec2 worldToScreen(final float width, final float height) {
-        return new Vec2(width*50, height*50);
     }
 
     static class Vec2 {

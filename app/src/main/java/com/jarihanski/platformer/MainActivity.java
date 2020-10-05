@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.view.Window;
 
 public class MainActivity extends AppCompatActivity {
     private Game _game;
@@ -32,5 +34,15 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy() {
         _game.onDestroy();
         super.onDestroy();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (!hasFocus) {
+            return;
+        }
+        Window window = getWindow();
+        window.setDecorFitsSystemWindows(false);
     }
 }

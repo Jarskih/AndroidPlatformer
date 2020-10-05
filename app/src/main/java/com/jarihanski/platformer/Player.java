@@ -3,8 +3,7 @@ package com.jarihanski.platformer;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-
-import static com.jarihanski.platformer.Utils.worldToScreen;
+import android.graphics.Point;
 
 public class Player extends Entity {
     private BitmapComponent _bitmapComponent = null;
@@ -13,7 +12,9 @@ public class Player extends Entity {
     public Player(final String spriteName, final int x, final int y) {
         _x = x;
         _y = y;
-        final Utils.Vec2 size = worldToScreen(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
+        _width = DEFAULT_DIMENTION;
+        _height = DEFAULT_DIMENTION;
+        final Point size = _game.worldToScreen(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
         _bitmapComponent = new BitmapComponent(_game.getContext(), spriteName, size);
     }
 

@@ -5,26 +5,26 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 
 public class ViewPort {
-     private final PointF mLookAt = new PointF(0f,0f);
-     private int mPixelsPerMeterX; //viewport "density"
-     private int mPixelsPerMeterY;
-     private int mScreenWidth; //resolution
-     private int mScreenHeight;
-     private int mScreenCenterY; //center screen
-     private int mScreenCenterX;
-     private float mMetersToShowX; //Field of View
-     private float mMetersToShowY;
-     private float mHalfDistX; //cached value (0.5*FOV)
-     private float mHalfDistY;
+     private final PointF _lookAt = new PointF(0f,0f);
+     private int _pixelsPerMeterX; //viewport "density"
+     private int _pixelsPerMeterY;
+     private int _screenWidth;   //resolution
+     private int _screenHeight;
+     private int _screenCenterY; //center screen
+     private int _screenCenterX;
+     private float _metersToShowX; //Field of View
+     private float _metersToShowY;
+     private float _halfDistX; //cached value (0.5*FOV)
+     private float _halfDistY;
      private final static float BUFFER = 2f; //overdraw, to avoid visual gaps
 
     public ViewPort(final int screenWidth, final int screenHeight, final float metersToShowX, final float metersToShowY){
-        mScreenWidth = screenWidth;
-        mScreenHeight = screenHeight;
-        mScreenCenterX = mScreenWidth / 2;
-        mScreenCenterY = mScreenHeight / 2;
-        mLookAt.x = 0.0f;
-        mLookAt.y = 0.0f;
+        _screenWidth = screenWidth;
+        _screenHeight = screenHeight;
+        _screenCenterX = _screenWidth / 2;
+        _screenCenterY = _screenHeight / 2;
+        _lookAt.x = 0.0f;
+        _lookAt.y = 0.0f;
         setMetersToShow(metersToShowX, metersToShowY);
     }
 
@@ -35,42 +35,42 @@ public class ViewPort {
     private void setMetersToShow(float metersToShowX, float metersToShowY){
         if (metersToShowX <= 0f && metersToShowY <= 0f) throw new IllegalArgumentException("One of the dimensions must be provided!");
         //formula: new height = (original height / original width) x new width
-        mMetersToShowX = metersToShowX;
-        mMetersToShowY = metersToShowY;
+        _metersToShowX = metersToShowX;
+        _metersToShowY = metersToShowY;
         if(metersToShowX == 0f || metersToShowY == 0f){
             if(metersToShowY > 0f) { //if Y is configured, calculate X
-                mMetersToShowX = ((float) mScreenWidth / mScreenHeight) * metersToShowY;
+                _metersToShowX = ((float) _screenWidth / _screenHeight) * metersToShowY;
             }else { //if X is configured, calculate Y
-                mMetersToShowY = ((float) mScreenHeight / mScreenWidth) * metersToShowX;
+                _metersToShowY = ((float) _screenHeight / _screenWidth) * metersToShowX;
             }
         }
-        mHalfDistX = (mMetersToShowX+BUFFER) * 0.5f;
-        mHalfDistY = (mMetersToShowY+BUFFER) * 0.5f;
-        mPixelsPerMeterX = (int)(mScreenWidth / mMetersToShowX);
-        mPixelsPerMeterY = (int)(mScreenHeight / mMetersToShowY);
+        _halfDistX = (_metersToShowX+BUFFER) * 0.5f;
+        _halfDistY = (_metersToShowY+BUFFER) * 0.5f;
+        _pixelsPerMeterX = (int)(_screenWidth / _metersToShowX);
+        _pixelsPerMeterY = (int)(_screenHeight / _metersToShowY);
     }
 
     public float getHorizontalView(){
-        return mMetersToShowX;
+        return _metersToShowX;
     }
     public float getVerticalView(){
-        return mMetersToShowY;
+        return _metersToShowY;
     }
     public int getScreenWidth() {
-        return mScreenWidth;
+        return _screenWidth;
     }
     public int getScreenHeight(){
-        return mScreenHeight;
+        return _screenHeight;
     }
     public int getPixelsPerMeterX(){
-        return mPixelsPerMeterX;
+        return _pixelsPerMeterX;
     }
     public int getPixelsPerMeterY(){
-        return mPixelsPerMeterY;
+        return _pixelsPerMeterY;
     }
     public void lookAt(final float x, final float y){
-        mLookAt.x = x;
-        mLookAt.y = y;
+        _lookAt.x = x;
+        _lookAt.y = y;
     }
     public void lookAt(final Entity obj){
         lookAt(obj.centerX(), obj.centerY());
@@ -78,30 +78,31 @@ public class ViewPort {
     public void lookAt(final PointF pos){
         lookAt(pos.x, pos.y);
     }
+
     public void worldToScreen(final float worldPosX, final float worldPosY, Point screenPos){
-        screenPos.x = (int) (mScreenCenterX - ((mLookAt.x - worldPosX) * mPixelsPerMeterX));
-        screenPos.y = (int) (mScreenCenterY - ((mLookAt.y - worldPosY) * mPixelsPerMeterY));
+        screenPos.x = (int) (_screenCenterX - ((_lookAt.x - worldPosX) * _pixelsPerMeterX));
+        screenPos.y = (int) (_screenCenterY - ((_lookAt.y - worldPosY) * _pixelsPerMeterY));
     }
     public void worldToScreen(final PointF worldPos, Point screenPos){
-        worldToScreen(worldPos, screenPos);
+        worldToScreen(worldPos.x, worldPos.y, screenPos);
     }
     public void worldToScreen(final Entity e, final Point screenPos){
-        worldToScreen(e, screenPos);
+        worldToScreen(e._x, e._y, screenPos);
     }
     public boolean inView(final Entity e) {
-        final float maxX = (mLookAt.x + mHalfDistX);
-        final float minX = (mLookAt.x - mHalfDistX)-e._width;
-        final float maxY = (mLookAt.y + mHalfDistY);
-        final float minY  = (mLookAt.y - mHalfDistY)-e._height;
+        final float maxX = (_lookAt.x + _halfDistX);
+        final float minX = (_lookAt.x - _halfDistX)-e._width;
+        final float maxY = (_lookAt.y + _halfDistY);
+        final float minY  = (_lookAt.y - _halfDistY)-e._height;
         return (e._x > minX && e._x < maxX)
                 && (e._y > minY && e._y < maxY);
     }
 
     public boolean inView(final RectF bounds) {
-        final float right = (mLookAt.x + mHalfDistX);
-        final float left = (mLookAt.x - mHalfDistX);
-        final float bottom = (mLookAt.y + mHalfDistY);
-        final float top  = (mLookAt.y - mHalfDistY);
+        final float right = (_lookAt.x + _halfDistX);
+        final float left = (_lookAt.x - _halfDistX);
+        final float bottom = (_lookAt.y + _halfDistY);
+        final float top  = (_lookAt.y - _halfDistY);
         return (bounds.left < right && bounds.right > left)
                 && (bounds.top < bottom && bounds.bottom > top);
     }
