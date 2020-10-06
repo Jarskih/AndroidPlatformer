@@ -13,10 +13,16 @@ public class Config {
 
     public final int STAGE_WIDTH;
     public final int STAGE_HEIGHT;
+    public final float GRAVITY;
+    public final float PLAYER_SPEED;
+    public final float PLAYER_JUMP_FORCE;
 
     Config(Context context) {
         STAGE_WIDTH = readConfigInt(context, "STAGE_WIDTH");
         STAGE_HEIGHT = readConfigInt(context, "STAGE_HEIGHT");
+        GRAVITY = readConfigFloat(context, "GRAVITY");
+        PLAYER_SPEED = readConfigFloat(context, "PLAYER_SPEED");
+        PLAYER_JUMP_FORCE = readConfigFloat(context, "PLAYER_JUMP_FORCE");
     }
 
     // https://stackoverflow.com/questions/5140539/android-config-file

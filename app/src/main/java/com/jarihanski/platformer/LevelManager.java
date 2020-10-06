@@ -10,6 +10,8 @@ public class LevelManager {
     private final ArrayList<Entity> _entitiesToAdd = new ArrayList<>();
     private final ArrayList<Entity> _entitiesToRemove = new ArrayList<>();
     Player _player;
+    private int _levelHeight;
+    private int _levelWidth;
 
     public LevelManager(final LevelData levelData) {
         loadMapAssets(levelData);
@@ -17,8 +19,8 @@ public class LevelManager {
 
     private void loadMapAssets(final LevelData levelData) {
         cleanUp();
-        int _levelHeight = levelData._height;
-        int _levelWidth = levelData._width;
+        _levelHeight = levelData._height;
+        _levelWidth = levelData._width;
 
         for (int y = 0; y < _levelHeight; y++) {
             final int[] row = levelData.getRow(y);
@@ -82,4 +84,6 @@ public class LevelManager {
     public ArrayList<Entity> GetEntities() {
         return _entities;
     }
+    public int GetHeight() { return _levelHeight; }
+    public int GetWidth() { return _levelWidth; }
 }

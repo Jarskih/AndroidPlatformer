@@ -1,9 +1,12 @@
 package com.jarihanski.platformer;
 
+import android.content.res.Resources;
 import android.graphics.PointF;
 
-public abstract class Utils {
+import java.util.Random;
 
+public abstract class Utils {
+    static final Random RNG = new Random();
     static float clamp(float val, final float min, final float max) {
         if(val < min) {
             val = min;
@@ -22,12 +25,19 @@ public abstract class Utils {
         return val;
     }
 
-    static class Vec2 {
-        public float _x;
-        public float _y;
-        public Vec2(float x, float y) {
-            _x = x;
-            _y = y;
-        }
+    static float between(final float min, final float max) {
+        return min + RNG.nextFloat() * (max-min);
+    }
+
+    static int between(final int min, final int max) {
+        return min + RNG.nextInt() * (max-min);
+    }
+
+    public static int pxToDp(final int px) {
+        return (int) (px / Resources.getSystem().getDisplayMetrics().density);
+    }
+
+    public static int dpToPx(final int dp) {
+        return (int) (dp * Resources.getSystem().getDisplayMetrics().density);
     }
 }

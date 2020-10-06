@@ -1,10 +1,7 @@
 package com.jarihanski.platformer;
 
 import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.view.Window;
 
 public class MainActivity extends AppCompatActivity {
@@ -13,8 +10,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        _game = new Game(this); //this == GameActivity == a Context'
-        setContentView(_game);
+        setContentView(R.layout.activity_main);
+        _game = findViewById(R.id.game);
+        InputManager input = new TouchController(findViewById(R.id.touch_controller));
+        _game.setControls(input);
     }
 
     @Override

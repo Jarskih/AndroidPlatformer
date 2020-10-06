@@ -2,6 +2,7 @@ package com.jarihanski.platformer;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.PointF;
 
 public abstract class Entity {
     protected static final String TAG = "Entity";
@@ -10,16 +11,11 @@ public abstract class Entity {
     protected float _y = 0;
     protected float _width = 0;
     protected float _height = 0;
-    protected float _velX = 0;
-    protected float _velY = 0;
 
     public abstract void update(float dt);
     public abstract void render(final Canvas canvas, final Matrix transform, final Paint paint);
-    public boolean isDead() {
-        return false;
-    }
 
-    protected void onCollision(final Entity that, final int damage) {}
+    protected void onCollision(final Entity that) {}
 
     float left() {
         return _x;
@@ -53,7 +49,37 @@ public abstract class Entity {
                 || b.bottom() <= a.top());
     }
 
-    public abstract void destroy();
+    //AABB intersection test.
+    //returns true on intersection, and sets the least intersecting axis in overlap
+    static final PointF overlap = new PointF( 0 , 0 ); //Q&D PointF pool for collision detection. Assumes single threading.
+    @SuppressWarnings ( "UnusedReturnValue" )
+    static boolean getOverlap( final Entity a, final Entity b, final PointF overlap) {
+        overlap.x = 0.0f;
+        overlap.y = 0.0f;
+        final float centerDeltaX = a.centerX() - b.centerX();
+        final float halfWidths = (a._width + b._width) * 0.5f;
+        float dx = Math.abs(centerDeltaX); //cache the abs, we need it twice
 
-    public abstract void spawn();
+        if (dx > halfWidths) return false ; //no overlap on x == no collision
+
+        final float centerDeltaY = a.centerY() - b.centerY();
+        final float halfHeights = (a._height + b._height) * 0.5f;
+        float dy = Math.abs(centerDeltaY);
+
+        if (dy > halfHeights) return false ; //no overlap on y == no collision
+
+        dx = halfWidths - dx; //overlap on x
+        dy = halfHeights - dy; //overlap on y
+        if (dy < dx) {
+            overlap.y = (centerDeltaY < 0 ) ? -dy : dy;
+        } else if (dy > dx) {
+            overlap.x = (centerDeltaX < 0 ) ? -dx : dx;
+        } else {
+            overlap.x = (centerDeltaX < 0 ) ? -dx : dx;
+            overlap.y = (centerDeltaY < 0 ) ? -dy : dy;
+        }
+        return true ;
+    }
+
+    public abstract void destroy();
 }
