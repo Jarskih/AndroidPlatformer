@@ -1,1 +1,3 @@
 Tiles: https://opengameart.org/content/platform-pack
+Music: https://opengameart.org/content/platformer-game-music-pack
+Sounds: https://opengameart.org/content/8-bit-sound-effects-library

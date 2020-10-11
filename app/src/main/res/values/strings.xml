@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">Platformer</string>
+    <string name="player_health">Health:</string>
+    <string name="collected">Coins:</string>
+    <string name="coins_left">Coins left:</string>
+    <string name="saved_state">com.jarihanski.platformer.save</string>
 </resources>

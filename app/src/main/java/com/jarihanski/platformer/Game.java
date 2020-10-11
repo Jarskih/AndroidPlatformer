@@ -1,21 +1,24 @@
 package com.jarihanski.platformer;
 
 import android.content.Context;
-import android.graphics.Camera;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
+import androidx.constraintlayout.solver.widgets.Rectangle;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callback {
     public static final String TAG = "Game";
@@ -34,11 +37,25 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     private Config _config = null;
     private long _lastTime = 0;
     public BitmapPool _bitmapPool = null;
+    private SoundPlayer _soundPlayer = null;
+    private QuadTree _quadTree = null;
 
     private LevelManager _levelManager = null;
     private Matrix _transform = new Matrix();
     private InputManager _controls = new InputManager(); //A valid null-controller.
     private ViewPort _camera = null;
+    private Hud _hud = null;
+    private MusicPlayer _music = null;
+    private int _currentLevel = 1;
+
+    public enum GameEvent {
+        LevelCompleted,
+        Jump,
+        CoinPickup,
+        PlayerDied,
+        PlayerDamaged
+    }
+
 
     public Game(Context context)
     {
@@ -62,12 +79,33 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         _holder.addCallback(this);
         _holder.setFixedSize(_config.STAGE_WIDTH, _config.STAGE_HEIGHT);
         _paint = new Paint();
-        _camera = new ViewPort(1280, 720, METERS_TO_SHOW_X, METERS_TO_SHOW_Y);
+        _camera = new ViewPort(1280, 720, METERS_TO_SHOW_X, METERS_TO_SHOW_Y, this);
         Entity._game = this;
         _bitmapPool = new BitmapPool(this);
-        _levelManager = new LevelManager(new TestLevel());
 
+        loadCurrentLevel();
+        _levelManager = new LevelManager(new LevelData(getContext(), _currentLevel), this);
+        _hud = new Hud();
+
+        _music = new MusicPlayer(context);
+        _music.playMusic(_currentLevel);
+
+        RectF bounds = new RectF();
+        bounds.left = 0;
+        bounds.right = getLevelWidth();
+        bounds.bottom = getLevelHeight();
+        bounds.top = 0;
+        _camera.setBounds(bounds);
+        _soundPlayer = new SoundPlayer(getContext());
+        Rectangle rect = new Rectangle();
+        rect.setBounds(0, 0, getWidth(), getHeight());
+        _quadTree = new QuadTree(0, rect);
         Log.d(TAG, "Game created!");
+    }
+
+    public void onGameEvent(GameEvent gameEvent, Entity e) {
+        Log.d("GameEvent: " + gameEvent, TAG);
+        _soundPlayer.playSoundForGameEvent(gameEvent);
     }
 
     @Override
@@ -85,6 +123,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
 
     private void update(float dt) {
         if(_gameOver) {
+            restart();
             return;
         }
 
@@ -96,10 +135,32 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         _levelManager.addAndRemoveEntities();
         checkCollisions();
         checkGameOver();
+        checkCoinsCollected();
+    }
+
+    private void checkCoinsCollected() {
+        if(_levelManager.getCoinsLeft() <= 0) {
+            nextLevel();
+        }
+    }
+
+    private void nextLevel() {
+        _currentLevel += 1;
+        if(_currentLevel > _levelManager.lastLevel()) {
+            _currentLevel = 1;
+        }
+        _levelManager.destroy();
+        clearSave();
+        _levelManager = new LevelManager(new LevelData(this.getContext(), _currentLevel), this);
+        onGameEvent(GameEvent.LevelCompleted, null);
+        _music.playMusic(_currentLevel);
     }
 
     final static Point _pos = new Point();
     private void render(ViewPort camera) {
+        if(_gameOver) {
+            return;
+        }
         //acquire and lock the canvas
         if (!acquireAndLockCanvas()) {
             return;
@@ -113,6 +174,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
                 camera.worldToScreen(e, _pos);
                 _transform.postTranslate(_pos.x, _pos.y);
                 e.render(_canvas, _transform, _paint);
+                _hud.render(_canvas, _paint, _levelManager._player, _levelManager.getCoinsLeft(), this.getContext());
             }
         } finally {
             //unlock the canvas and post to the UI thread
@@ -137,20 +199,45 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     }
 
     private void checkGameOver() {
-
+        if(_levelManager._player.isDead()) {
+            _gameOver = true;
+            clearSave();
+            onGameEvent(GameEvent.PlayerDied, null);
+        }
     }
 
+    private void restart() {
+        _levelManager.destroy();
+        _levelManager = new LevelManager(new LevelData(this.getContext(), _currentLevel), this);
+        clearSave();
+        _gameOver = false;
+    }
+
+    private void clearSave() {
+        SharedPreferences prefs = getContext().getSharedPreferences(getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.clear();
+        editor.apply();
+    }
+
+    private ArrayList<Entity> _returnEntities = new ArrayList<>();
+
     private void checkCollisions() {
-        final int count = _levelManager.GetEntities().size();
-        final ArrayList<Entity> entities = _levelManager.GetEntities();
-        Entity a, b;
-        for (int i = 0; i < count-1; i++) {
-            for(int j = i+1; j < count; j++){
-                a = entities.get(i);
-                b = entities.get(j);
-                if(a.isColliding(b)) {
-                    a.onCollision(b);
-                    b.onCollision(a);
+        _quadTree.clear();
+        for (int i = 0; i < _levelManager.GetEntities().size(); i++) {
+            _quadTree.insert(_levelManager.GetEntities().get(i));
+        }
+
+        for(Entity ent : _levelManager.GetEntities()) {
+            _returnEntities.clear();
+            _quadTree.retrieve(_returnEntities, ent);
+            for(Entity e : _returnEntities) {
+                if(e == ent) {
+                    continue;
+                }
+                if(ent.isColliding(e)) {
+                    ent.onCollision(e);
+                    e.onCollision(ent);
                 }
             }
         }
@@ -161,11 +248,14 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     protected void onResume() {
         Log.d(TAG, "onResume");
         _controls.onResume();
+        _music.start();
     }
 
     protected void onPause() {
         Log.d(TAG, "onPause");
+
         _controls.onPause();
+        _music.pause();
 
         _isRunning = false;
         while(true) {
@@ -182,6 +272,15 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         Log.d(TAG, "onDestroy");
         _gameThread = null;
         _controls = null;
+        if(_music != null) {
+            _music.destroy();
+            _music = null;
+        }
+
+        if(_soundPlayer != null) {
+            _soundPlayer.destroy();
+            _soundPlayer = null;
+        }
 
         if(_levelManager != null) {
             _levelManager.destroy();
@@ -198,6 +297,8 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     @Override
     public void surfaceCreated(@NonNull SurfaceHolder surfaceHolder) {
         Log.d("SurfaceCreated", TAG);
+        _gameThread = new Thread(this);
+        _isRunning = true;
     }
     @Override
     public void surfaceChanged(@NonNull SurfaceHolder surfaceHolder, int format, int width, int height) {
@@ -205,12 +306,34 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         if(_gameThread != null && _isRunning) {
             Log.d("Game thread started", TAG);
             _gameThread.start();
-            _isRunning = true;
         }
+
+        for(Entity e : _levelManager.GetEntities()) {
+            e.loadGameState(getContext());
+        }
+        loadCurrentLevel();
     }
     @Override
     public void surfaceDestroyed(@NonNull SurfaceHolder surfaceHolder) {
         Log.d("SurfaceDestroyed", TAG);
+
+        ArrayList<Entity> entities = _levelManager.GetEntities();
+        for(int i = 0; i < entities.size(); i++) {
+            entities.get(i).saveGameState(getContext());
+        }
+        saveCurrentLevel();
+    }
+
+    private void saveCurrentLevel() {
+        SharedPreferences sharedPref = getContext().getSharedPreferences(getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt("currentLevel", _currentLevel);
+        editor.apply();
+    }
+
+    private void loadCurrentLevel() {
+        SharedPreferences sharedPref = getContext().getSharedPreferences(getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
+        _currentLevel = sharedPref.getInt("currentLevel", 1);
     }
 
     public Config getConfig() {
@@ -233,5 +356,10 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
 
     public int getLevelWidth() {
         return _levelManager.GetWidth();
+    }
+
+    public void removeEntity(Entity that) {
+        _levelManager.removeEntity(that);
+
     }
 }

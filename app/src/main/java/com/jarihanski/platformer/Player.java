@@ -1,28 +1,30 @@
 package com.jarihanski.platformer;
 
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.PointF;
 
 public class Player extends Entity {
     protected static final String TAG = "Player";
     private static final float MAX_DELTA = 0.48f;
     private static final float DEFAULT_DIMENTION = 1f;
-    private float MIN_INPUT_TO_TURN = 0.05f;
+    private final float MIN_INPUT_TO_TURN = _game.getConfig().MIN_INPUT_TO_TURN;
+    private final float _recoveryTime = _game.getConfig().PLAYER_INVULNERABLE_TIME;
+    private float _timeSinceDamage = 2f;
     private static int _facing = 0;
     private static final int LEFT = 1;
     private static final int RIGHT = -1;
-    private static final int _respawnPosY = -5;
 
     private BitmapComponent _bitmapComponent = null;
     private float _velX = 0;
     private float _velY = 0;
     private boolean _isGrounded;
+    private int _health = 0;
+    private int _collected = 0;
 
     public Player(final String spriteName, final int x, final int y) {
+        _entityType = EntityType.PLAYER;
         _facing = LEFT;
         _x = x;
         _y = y;
@@ -31,10 +33,13 @@ public class Player extends Entity {
         final PointF size = new PointF(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
         _bitmapComponent = new BitmapComponent(_game);
         _bitmapComponent.LoadBitMap(spriteName, size);
+        _health = _game.getConfig().PLAYER_STARTING_HEALTH;
     }
 
     @Override
     public void update(float dt) {
+        _timeSinceDamage += dt;
+
         final InputManager controls = _game.getControls();
         final float direction = controls._horizontalFactor;
 
@@ -46,6 +51,7 @@ public class Player extends Entity {
         }
 
         if(controls._isJumping && _isGrounded){
+            _game.onGameEvent(Game.GameEvent.Jump, null);
             _velY = _game.getConfig().PLAYER_JUMP_FORCE;
             _isGrounded = false;
         }
@@ -71,7 +77,7 @@ public class Player extends Entity {
         _x += Utils.clamp(_velX * dt, -MAX_DELTA, MAX_DELTA);
 
         if(_y > _game.getLevelHeight()) {
-            _y = _respawnPosY;
+            _health = -1;
         }
 
         if(_x < 0) {
@@ -84,6 +90,13 @@ public class Player extends Entity {
 
     @Override
     public void onCollision(final Entity that) {
+        if(that._entityType == EntityType.COLLECTIBLE) {
+            _collected++;
+            _game.removeEntity(that);
+            _game.onGameEvent(Game.GameEvent.CoinPickup, this);
+            return;
+        }
+
         Entity.getOverlap(this, that, Entity.overlap);
         _x += Entity.overlap.x;
         _y += Entity.overlap.y;
@@ -93,7 +106,22 @@ public class Player extends Entity {
                 _isGrounded = true;
             }
         }
+
+        if(isInvincible()) {
+            return;
+        }
+
+        if(that._entityType == EntityType.ENEMY) {
+            _health -= that.getDamage();
+            _timeSinceDamage = 0;
+            _velY += _game.getConfig().PLAYER_JUMP_FORCE;
+            _game.onGameEvent(Game.GameEvent.PlayerDamaged, this);
+        }
     };
+
+    public boolean isInvincible() {
+        return _timeSinceDamage < _recoveryTime;
+    }
 
     @Override
     public void render(Canvas canvas, final Matrix transform, final Paint paint) {
@@ -102,7 +130,20 @@ public class Player extends Entity {
             final float offset = _game.worldToScreen(_width, _height).x;
             transform.postTranslate(offset, 0);
         }
-        canvas.drawBitmap(_bitmapComponent.GetBitmap(), transform, paint);
+
+        if(isInvincible()) {
+            blink(canvas, paint, transform);
+        } else {
+            paint.setAlpha(255);
+            canvas.drawBitmap(_bitmapComponent.GetBitmap(), transform, paint);
+        }
+    }
+
+    private void blink(final Canvas canvas, final Paint paint, final Matrix transform) {
+        float _blinkSpeed = 50; // Not moved to config because not needed for balancing the game
+        int newAlpha = (int)(Math.sin(_timeSinceDamage*_blinkSpeed) * 255);
+        paint.setAlpha(newAlpha);
+        canvas.drawBitmap(_bitmapComponent.GetBitmap(),transform, paint);
     }
 
     @Override
@@ -111,6 +152,10 @@ public class Player extends Entity {
     }
 
     public boolean isDead() {
-        return false;
+        return _health <= 0;
     }
+    public int getHealth() {
+        return _health;
+    }
+    public int getCollected() {return _collected;};
 }

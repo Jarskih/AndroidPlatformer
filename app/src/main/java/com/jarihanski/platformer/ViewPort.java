@@ -6,7 +6,8 @@ import android.graphics.RectF;
 
 public class ViewPort {
      private final PointF _lookAt = new PointF(0f,0f);
-     private int _pixelsPerMeterX; //viewport "density"
+    private final Game _game;
+    private int _pixelsPerMeterX; //viewport "density"
      private int _pixelsPerMeterY;
      private int _screenWidth;   //resolution
      private int _screenHeight;
@@ -17,8 +18,9 @@ public class ViewPort {
      private float _halfDistX; //cached value (0.5*FOV)
      private float _halfDistY;
      private final static float BUFFER = 2f; //overdraw, to avoid visual gaps
+     private RectF _bounds;
 
-    public ViewPort(final int screenWidth, final int screenHeight, final float metersToShowX, final float metersToShowY){
+    public ViewPort(final int screenWidth, final int screenHeight, final float metersToShowX, final float metersToShowY, final Game game){
         _screenWidth = screenWidth;
         _screenHeight = screenHeight;
         _screenCenterX = _screenWidth / 2;
@@ -26,6 +28,7 @@ public class ViewPort {
         _lookAt.x = 0.0f;
         _lookAt.y = 0.0f;
         setMetersToShow(metersToShowX, metersToShowY);
+        _game = game;
     }
 
     //setMetersToShow calculates the number of physical pixels per meters
@@ -71,6 +74,13 @@ public class ViewPort {
     public void lookAt(final float x, final float y){
         _lookAt.x = x;
         _lookAt.y = y;
+
+        if(_bounds != null) {
+            _lookAt.x = Utils.clamp(_lookAt.x, _bounds.left+_halfDistX, _bounds.right-_halfDistX);
+            _lookAt.y = Utils.clamp(_lookAt.y, _bounds.top+_halfDistY, _bounds.bottom-_halfDistY);
+        }
+       // _lookAt.x = Utils.clamp(_lookAt.x, _halfDistX, _game.getLevelWidth()-_halfDistX);
+       // _lookAt.y = Utils.clamp(_lookAt.y, _halfDistY, _game.getLevelHeight()-_halfDistY);
     }
     public void lookAt(final Entity obj){
         lookAt(obj.centerX(), obj.centerY());
@@ -105,5 +115,9 @@ public class ViewPort {
         final float top  = (_lookAt.y - _halfDistY);
         return (bounds.left < right && bounds.right > left)
                 && (bounds.top < bottom && bounds.bottom > top);
+    }
+
+    public void setBounds(final RectF worldEdges) {
+        _bounds = worldEdges;
     }
 }

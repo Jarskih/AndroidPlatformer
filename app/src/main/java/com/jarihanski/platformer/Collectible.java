@@ -5,12 +5,15 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PointF;
 
-public class StaticEntity extends Entity {
+public class Collectible extends Entity {
     private BitmapComponent _bitmapComponent = null;
     private static final float DEFAULT_DIMENTION = 1f;
+    private static final float MAX_DELTA = 0.48f;
+    private float _velY = 0;
+    private boolean _isGrounded = false;
 
-    public StaticEntity(final String spriteName, final float x, final float y) {
-        _entityType = EntityType.TERRAIN;
+    public Collectible(final String spriteName, final float x, final float y) {
+        _entityType = EntityType.COLLECTIBLE;
         _x = x;
         _y = y;
         _width = DEFAULT_DIMENTION;
@@ -29,7 +32,24 @@ public class StaticEntity extends Entity {
 
     @Override
     public void update(float dt) {
+        if(!_isGrounded) {
+            _velY += _game.getConfig().GRAVITY * dt;
+        }
+        _y += Utils.clamp(_velY * dt, -MAX_DELTA, MAX_DELTA);
+        _isGrounded = false;
+    }
 
+    @Override
+    protected void onCollision(final Entity that) {
+        Entity.getOverlap(this, that, Entity.overlap);
+        _x += Entity.overlap.x;
+        _y += Entity.overlap.y;
+        if(overlap.y != 0) {
+            _velY = 0;
+            if(Entity.overlap.y < 0.0f) {
+                _isGrounded = true;
+            }
+        }
     }
 
     @Override

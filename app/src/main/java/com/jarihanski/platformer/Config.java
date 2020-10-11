@@ -16,6 +16,10 @@ public class Config {
     public final float GRAVITY;
     public final float PLAYER_SPEED;
     public final float PLAYER_JUMP_FORCE;
+    public final int PLAYER_STARTING_HEALTH;
+    public final int STATIC_HAZARD_DAMAGE;
+    public final float MIN_INPUT_TO_TURN;
+    public final float PLAYER_INVULNERABLE_TIME;
 
     Config(Context context) {
         STAGE_WIDTH = readConfigInt(context, "STAGE_WIDTH");
@@ -23,6 +27,10 @@ public class Config {
         GRAVITY = readConfigFloat(context, "GRAVITY");
         PLAYER_SPEED = readConfigFloat(context, "PLAYER_SPEED");
         PLAYER_JUMP_FORCE = readConfigFloat(context, "PLAYER_JUMP_FORCE");
+        PLAYER_STARTING_HEALTH = readConfigInt(context, "PLAYER_STARTING_HEALTH");
+        STATIC_HAZARD_DAMAGE = readConfigInt(context, "STATIC_HAZARD_DAMAGE");
+        MIN_INPUT_TO_TURN = readConfigFloat(context, "MIN_INPUT_TO_TURN");
+        PLAYER_INVULNERABLE_TIME = readConfigFloat(context, "PLAYER_INVULNERABLE_TIME");
     }
 
     // https://stackoverflow.com/questions/5140539/android-config-file
