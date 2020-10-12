@@ -47,6 +47,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     private Hud _hud = null;
     private MusicPlayer _music = null;
     private int _currentLevel = 1;
+    private ArrayList<Entity> _returnEntities = new ArrayList<>();
 
     public enum GameEvent {
         LevelCompleted,
@@ -98,7 +99,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         _camera.setBounds(bounds);
         _soundPlayer = new SoundPlayer(getContext());
         Rectangle rect = new Rectangle();
-        rect.setBounds(0, 0, getWidth(), getHeight());
+        rect.setBounds(0, 0, getLevelWidth(), getLevelHeight());
         _quadTree = new QuadTree(0, rect);
         Log.d(TAG, "Game created!");
     }
@@ -175,6 +176,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
                 _transform.postTranslate(_pos.x, _pos.y);
                 e.render(_canvas, _transform, _paint);
                 _hud.render(_canvas, _paint, _levelManager._player, _levelManager.getCoinsLeft(), this.getContext());
+                _quadTree.render(_canvas, _paint, _camera);
             }
         } finally {
             //unlock the canvas and post to the UI thread
@@ -220,15 +222,17 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         editor.apply();
     }
 
-    private ArrayList<Entity> _returnEntities = new ArrayList<>();
-
     private void checkCollisions() {
         _quadTree.clear();
-        for (int i = 0; i < _levelManager.GetEntities().size(); i++) {
-            _quadTree.insert(_levelManager.GetEntities().get(i));
+        ArrayList<Entity> entities = _levelManager.GetEntities();
+        for (int i = 0; i < entities.size(); i++) {
+            _quadTree.insert(entities.get(i));
         }
 
         for(Entity ent : _levelManager.GetEntities()) {
+            if(ent._entityType == Entity.EntityType.TERRAIN) {
+                continue;
+            }
             _returnEntities.clear();
             _quadTree.retrieve(_returnEntities, ent);
             for(Entity e : _returnEntities) {
