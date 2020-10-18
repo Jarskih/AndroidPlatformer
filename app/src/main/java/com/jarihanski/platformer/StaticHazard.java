@@ -8,7 +8,7 @@ import android.graphics.PointF;
 public class StaticHazard extends Entity {
     private BitmapComponent _bitmapComponent = null;
     private static final float DEFAULT_DIMENTION = 1f;
-    private final int _damage = 1;
+    private final int _damage;
 
     public StaticHazard(final String spriteName, final float x, final float y) {
         _entityType = EntityType.ENEMY;
@@ -19,6 +19,7 @@ public class StaticHazard extends Entity {
         final PointF size = new PointF(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
         _bitmapComponent = new BitmapComponent(_game);
         _bitmapComponent.LoadBitMap(spriteName, size);
+        _damage = _game.getConfig().SPIKE_DAMAGE;
     }
 
     public void LoadBitmap(final String spriteName, final float x, final float y) {

@@ -1,5 +1,7 @@
 package com.jarihanski.platformer;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -18,13 +20,6 @@ public class Collectible extends Entity {
         _y = y;
         _width = DEFAULT_DIMENTION;
         _height = DEFAULT_DIMENTION;
-        final PointF size = new PointF(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
-        _bitmapComponent = new BitmapComponent(_game);
-        _bitmapComponent.LoadBitMap(spriteName, size);
-    }
-
-    public void LoadBitmap(final String spriteName, final float x, final float y) {
-        destroy();
         final PointF size = new PointF(DEFAULT_DIMENTION, DEFAULT_DIMENTION);
         _bitmapComponent = new BitmapComponent(_game);
         _bitmapComponent.LoadBitMap(spriteName, size);
@@ -50,6 +45,26 @@ public class Collectible extends Entity {
                 _isGrounded = true;
             }
         }
+    }
+
+    @Override
+    public void loadGameState(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
+        if(sharedPref.contains(_entityId+"x")) {
+            _x = sharedPref.getFloat(_entityId + "x", 0);
+            _y = sharedPref.getFloat(_entityId + "y", 0);
+            _velY = sharedPref.getFloat(_entityId + "velY", 0);
+        }
+    }
+
+    @Override
+    public void saveGameState(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putFloat(_entityId+"x", _x);
+        editor.putFloat(_entityId+"y", _y);
+        editor.putFloat(_entityId+"velY", _velY);
+        editor.apply();
     }
 
     @Override

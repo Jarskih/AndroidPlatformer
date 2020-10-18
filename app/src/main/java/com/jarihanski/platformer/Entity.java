@@ -1,6 +1,5 @@
 package com.jarihanski.platformer;
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -46,7 +45,7 @@ public abstract class Entity {
     }
     float centerX() { return _x + (_width * 0.5f); }
 
-    public int getDamage() {return 0;};
+    public int getDamage() {return 0;}
 
     boolean isColliding(final Entity other) {
         if (this == other) {
@@ -97,19 +96,8 @@ public abstract class Entity {
     public abstract void destroy();
 
     public void loadGameState(Context context) {
-        PointF pos = new PointF();
-        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
-        if(sharedPref.contains(_entityId+"x")) {
-            _x = sharedPref.getFloat(_entityId+"x", 0);
-            _y = sharedPref.getFloat(_entityId+"y", 0);
-        }
     }
 
     public void saveGameState(Context context) {
-        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putFloat(_entityId+"x", _x);
-        editor.putFloat(_entityId+"y", _y);
-        editor.apply();
     }
 }

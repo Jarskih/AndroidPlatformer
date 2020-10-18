@@ -1,5 +1,7 @@
 package com.jarihanski.platformer;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -74,6 +76,10 @@ public class LevelManager {
             return;
         }
 
+        if(_entitiesToAdd.contains(e)){
+            return;
+        }
+
         if(e._entityType == Entity.EntityType.COLLECTIBLE) {
             _coinsLeft += 1;
         }
@@ -88,6 +94,10 @@ public class LevelManager {
             return;
         }
 
+        if(_entitiesToRemove.contains(e)){
+            return;
+        }
+
         if(e._entityType == Entity.EntityType.COLLECTIBLE) {
             _coinsLeft -= 1;
         }
@@ -99,12 +109,6 @@ public class LevelManager {
         addAndRemoveEntities();
         for (Entity e : _entitiesToAdd) {
             e.destroy();
-        }
-    }
-
-    public void loadGame(ArrayList<Entity> entities) {
-        for (Entity e : entities) {
-            addEntity(e);
         }
     }
 
@@ -124,5 +128,19 @@ public class LevelManager {
 
     public int lastLevel() {
         return _lastLevel;
+    }
+
+    public void LoadState() {
+        SharedPreferences sharedPref = _game.getContext().getSharedPreferences(_game.getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
+        if(sharedPref.contains("colleted")) {
+            _coinsLeft = sharedPref.getInt("coinsLeft" , 0);
+        }
+    }
+
+    public void SaveState() {
+        SharedPreferences sharedPref = _game.getContext().getSharedPreferences(_game.getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putInt("coinsLeft", _coinsLeft);
+        editor.apply();
     }
 }

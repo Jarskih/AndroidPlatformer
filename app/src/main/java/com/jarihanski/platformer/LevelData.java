@@ -17,14 +17,14 @@ public class LevelData {
     public static final String COLLECTIBLE = "coin";
     private static final String TAG = "Level data";
     private static final String DYNAMIC_HAZARD = "grass_enemy";
-    public static int NO_TILE = 0;
-    public int lastLevel;
+    public static final int NO_TILE = 0;
+    public final int lastLevel;
     private int[][] _tiles = null;
     int _height = 0;
     int _width = 0;
     private final SparseArray<String> _tileIdToSpriteName = new SparseArray<>();
     private final Context _context;
-    private final HashMap<Integer, String> _levelMap = new HashMap<Integer, String>();
+    private final HashMap<Integer, String> _levelMap = new HashMap<>();
 
     public LevelData(Context context, int levelName) {
         _context = context;

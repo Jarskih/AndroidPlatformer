@@ -15,14 +15,12 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import androidx.annotation.NonNull;
-import androidx.constraintlayout.solver.widgets.Rectangle;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callback {
     public static final String TAG = "Game";
-    private static int BACKGROUND_COLOR = Color.argb(255, 135, 206, 235);
+    private static final int BACKGROUND_COLOR = Color.argb(255, 135, 206, 235);
     private static final float METERS_TO_SHOW_X = 16f; //set the value you want fixed
     private static final float METERS_TO_SHOW_Y = 0f;  //the other is calculated at runtime!W
     private static final float NANOS_TO_SECONDS = 1/1000000000.0f;
@@ -41,13 +39,14 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     private QuadTree _quadTree = null;
 
     private LevelManager _levelManager = null;
-    private Matrix _transform = new Matrix();
+    private final Matrix _transform = new Matrix();
     private InputManager _controls = new InputManager(); //A valid null-controller.
     private ViewPort _camera = null;
     private Hud _hud = null;
     private MusicPlayer _music = null;
     private int _currentLevel = 1;
-    private ArrayList<Entity> _returnEntities = new ArrayList<>();
+    private final ArrayList<Entity> _returnEntities = new ArrayList<>();
+    private RectF _levelbounds = null;
 
     public enum GameEvent {
         LevelCompleted,
@@ -84,23 +83,21 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         Entity._game = this;
         _bitmapPool = new BitmapPool(this);
 
-        loadCurrentLevel();
         _levelManager = new LevelManager(new LevelData(getContext(), _currentLevel), this);
+        loadCurrentLevel();
+
         _hud = new Hud();
 
         _music = new MusicPlayer(context);
         _music.playMusic(_currentLevel);
 
-        RectF bounds = new RectF();
-        bounds.left = 0;
-        bounds.right = getLevelWidth();
-        bounds.bottom = getLevelHeight();
-        bounds.top = 0;
-        _camera.setBounds(bounds);
+        _levelbounds = new RectF(0, 0, getLevelWidth(), getLevelHeight());
+
+        _camera.setBounds(_levelbounds);
+        _quadTree = new QuadTree(0, _levelbounds);
+
         _soundPlayer = new SoundPlayer(getContext());
-        Rectangle rect = new Rectangle();
-        rect.setBounds(0, 0, getLevelWidth(), getLevelHeight());
-        _quadTree = new QuadTree(0, rect);
+
         Log.d(TAG, "Game created!");
     }
 
@@ -155,6 +152,9 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         _levelManager = new LevelManager(new LevelData(this.getContext(), _currentLevel), this);
         onGameEvent(GameEvent.LevelCompleted, null);
         _music.playMusic(_currentLevel);
+
+        _levelbounds.right = getLevelWidth();
+        _levelbounds.bottom = getLevelHeight();
     }
 
     final static Point _pos = new Point();
@@ -176,7 +176,6 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
                 _transform.postTranslate(_pos.x, _pos.y);
                 e.render(_canvas, _transform, _paint);
                 _hud.render(_canvas, _paint, _levelManager._player, _levelManager.getCoinsLeft(), this.getContext());
-                _quadTree.render(_canvas, _paint, _camera);
             }
         } finally {
             //unlock the canvas and post to the UI thread
@@ -197,7 +196,7 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     }
 
     public Point worldToScreen(final int width, final int height) {
-        return new Point((int)width * _camera.getPixelsPerMeterX(), (int)height * _camera.getPixelsPerMeterY());
+        return new Point(width * _camera.getPixelsPerMeterX(), height * _camera.getPixelsPerMeterY());
     }
 
     private void checkGameOver() {
@@ -230,9 +229,6 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         }
 
         for(Entity ent : _levelManager.GetEntities()) {
-            if(ent._entityType == Entity.EntityType.TERRAIN) {
-                continue;
-            }
             _returnEntities.clear();
             _quadTree.retrieve(_returnEntities, ent);
             for(Entity e : _returnEntities) {
@@ -252,14 +248,17 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
     protected void onResume() {
         Log.d(TAG, "onResume");
         _controls.onResume();
-        _music.start();
+        _music.playMusic(_currentLevel);
     }
 
     protected void onPause() {
         Log.d(TAG, "onPause");
 
         _controls.onPause();
-        _music.pause();
+
+        if(_music != null) {
+            _music.destroy();
+        }
 
         _isRunning = false;
         while(true) {
@@ -333,11 +332,13 @@ public class  Game extends SurfaceView implements Runnable, SurfaceHolder.Callba
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.putInt("currentLevel", _currentLevel);
         editor.apply();
+        _levelManager.SaveState();
     }
 
     private void loadCurrentLevel() {
         SharedPreferences sharedPref = getContext().getSharedPreferences(getContext().getString(R.string.saved_state), Context.MODE_PRIVATE);
         _currentLevel = sharedPref.getInt("currentLevel", 1);
+        _levelManager.LoadState();
     }
 
     public Config getConfig() {

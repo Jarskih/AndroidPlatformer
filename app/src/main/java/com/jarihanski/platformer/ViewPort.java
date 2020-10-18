@@ -9,10 +9,10 @@ public class ViewPort {
     private final Game _game;
     private int _pixelsPerMeterX; //viewport "density"
      private int _pixelsPerMeterY;
-     private int _screenWidth;   //resolution
-     private int _screenHeight;
-     private int _screenCenterY; //center screen
-     private int _screenCenterX;
+     private final int _screenWidth;   //resolution
+     private final int _screenHeight;
+     private final int _screenCenterY; //center screen
+     private final int _screenCenterX;
      private float _metersToShowX; //Field of View
      private float _metersToShowY;
      private float _halfDistX; //cached value (0.5*FOV)

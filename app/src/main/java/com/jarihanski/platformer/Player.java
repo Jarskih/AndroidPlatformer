@@ -1,5 +1,7 @@
 package com.jarihanski.platformer;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
@@ -117,7 +119,7 @@ public class Player extends Entity {
             _velY += _game.getConfig().PLAYER_JUMP_FORCE;
             _game.onGameEvent(Game.GameEvent.PlayerDamaged, this);
         }
-    };
+    }
 
     public boolean isInvincible() {
         return _timeSinceDamage < _recoveryTime;
@@ -147,6 +149,32 @@ public class Player extends Entity {
     }
 
     @Override
+    public void loadGameState(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
+        if(sharedPref.contains(_entityId+"x")) {
+            _x = sharedPref.getFloat(_entityId + "x", 0);
+            _y = sharedPref.getFloat(_entityId + "y", 0);
+            _velY = sharedPref.getFloat(_entityId + "velY", 0);
+            _velX = sharedPref.getFloat(_entityId + "velX", 0);
+            _health = sharedPref.getInt(_entityId + "health", 0);
+            _collected = sharedPref.getInt(_entityId + "collected", 0);
+        }
+    }
+
+    @Override
+    public void saveGameState(Context context) {
+        SharedPreferences sharedPref = context.getSharedPreferences(context.getString(R.string.saved_state), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putFloat(_entityId+"x", _x);
+        editor.putFloat(_entityId+"y", _y);
+        editor.putFloat(_entityId+"velY", _velY);
+        editor.putFloat(_entityId+"velX", _velX);
+        editor.putInt(_entityId+"health", _health);
+        editor.putInt(_entityId + "collected", _collected);
+        editor.apply();
+    }
+
+    @Override
     public void destroy() {
         _bitmapComponent = null;
     }
@@ -157,5 +185,5 @@ public class Player extends Entity {
     public int getHealth() {
         return _health;
     }
-    public int getCollected() {return _collected;};
+    public int getCollected() {return _collected;}
 }

@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.PointF;
 
 public class BitmapComponent {
-    private Game _game;
+    private final Game _game;
     private Bitmap _bitmap;
 
     public BitmapComponent(Game game) {

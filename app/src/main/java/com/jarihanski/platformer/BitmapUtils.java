@@ -12,7 +12,7 @@ public class BitmapUtils {
     private static final boolean FILTER = true;
     private static BitmapFactory.Options _options = new BitmapFactory.Options(); //Q&D pool, assumes single threading
     private static Point _dimensions = new Point(0,0); //Q&D  pool, assumes single threading
-    private static Matrix _matrix = new Matrix(); //Q&D  pool, assumes single threading
+    private static final Matrix _matrix = new Matrix(); //Q&D  pool, assumes single threading
 
     private BitmapUtils(){super();}
 

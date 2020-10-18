@@ -1,7 +1,6 @@
 package com.jarihanski.platformer;
 
 import android.content.res.Resources;
-import android.graphics.PointF;
 
 import java.util.Random;
 

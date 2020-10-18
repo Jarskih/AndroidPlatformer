@@ -11,7 +11,7 @@ public class BitmapPool {
     private static final String TAG = "BitmapPool";
     private final HashMap<String, Bitmap> _bitmaps = new HashMap<>();
     public Bitmap _nullsprite = null;
-    private Game _game;
+    private final Game _game;
     public BitmapPool(final Game game){
         Objects.requireNonNull(game, "BitmapPool requires a valid Game instance");
         _game = game;

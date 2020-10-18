@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);

@@ -1,11 +1,5 @@
 package com.jarihanski.platformer;
-
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
-import android.graphics.Rect;
-
-import androidx.constraintlayout.solver.widgets.Rectangle;
+import android.graphics.RectF;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,15 +7,15 @@ import java.util.List;
 // https://gamedevelopment.tutsplus.com/tutorials/quick-tip-use-quadtrees-to-detect-likely-collisions-in-2d-space--gamedev-374
 
 public class QuadTree {
-    private int MAX_OBJECTS = 12;
-    private int MAX_LEVELS = 2;
+    private static final int  MAX_OBJECTS = 12;
+    private static final int MAX_LEVELS = 2;
 
-    private int _level;
-    private List<Entity> _entities;
-    private Rectangle _bounds;
-    private QuadTree[] _nodes;
+    private final int _level;
+    private final ArrayList<Entity> _entities;
+    private final RectF _bounds;
+    private final QuadTree[] _nodes;
 
-    public QuadTree(int level, Rectangle bounds) {
+    public QuadTree(int level, RectF bounds) {
         _level = level;
         _entities = new ArrayList();
         _bounds = bounds;
@@ -40,33 +34,29 @@ public class QuadTree {
     }
 
     private void split() {
-        int subWidth = _bounds.width / 2;
-        int subHeight = _bounds.height / 2;
-        int x = _bounds.x;
-        int y = _bounds.y;
+        float subWidth = _bounds.width() / 2f;
+        float subHeight = _bounds.height() / 2f;
+        float x = _bounds.left;
+        float y = _bounds.top;
 
-        Rectangle rect0 = new Rectangle();
-        rect0.setBounds(x + subWidth, y, subWidth, subHeight);
+        RectF rect0 = new RectF(x + subWidth, y, subWidth, subHeight);
         _nodes[0] = new QuadTree(_level+1, rect0);
 
-        Rectangle rect1 = new Rectangle();
-        rect1.setBounds(x, y, subWidth, subHeight);
+        RectF rect1 = new RectF(x, y, subWidth, subHeight);
         _nodes[1] = new QuadTree(_level+1, rect1);
 
-        Rectangle rect2 = new Rectangle();
-        rect2.setBounds(x , y + subHeight, subWidth, subHeight);
+        RectF rect2 = new RectF(x , y + subHeight, subWidth, subHeight);
         _nodes[2] = new QuadTree(_level+1, rect2);
 
-        Rectangle rect3 = new Rectangle();
-        rect3.setBounds(x + subWidth, y + subHeight, subWidth, subHeight);
+        RectF rect3 = new RectF(x + subWidth, y + subHeight, subWidth, subHeight);
         _nodes[3] = new QuadTree(_level+1, rect3);
     }
 
     private int getIndex(Entity entity) {
         int index = -1;
 
-        double verticalMidpoint = _bounds.x + (_bounds.width / 2);
-        double horizontalMidpoint = _bounds.y + (_bounds.height / 2);
+        double verticalMidpoint = _bounds.left + (_bounds.width() / 2f);
+        double horizontalMidpoint = _bounds.top + (_bounds.height() / 2f);
 
         boolean topQuadrant = (entity._y < horizontalMidpoint && entity._y + entity._height < horizontalMidpoint);
         boolean bottomQuadrant = (entity._y > horizontalMidpoint);
@@ -131,28 +121,5 @@ public class QuadTree {
             }
         }
         entities.addAll(_entities);
-    }
-
-    public void render(Canvas canvas, Paint paint, ViewPort camera) {
-        paint.setColor(Color.BLACK);
-        paint.setStyle(Paint.Style.STROKE);
-        for (QuadTree t : _nodes) {
-            if(t._nodes[0] != null) {
-                Rect r = new Rect(t._nodes[0]._bounds.x, t._nodes[0]._bounds.y,  t._nodes[0]._bounds.width, t._nodes[0]._bounds.height);
-                canvas.drawRect(r, paint);
-            }
-            if(t._nodes[1] != null) {
-                Rect r = new Rect(t._nodes[1]._bounds.x, t._nodes[1]._bounds.y, t._nodes[1]._bounds.width, t._nodes[1]._bounds.height);
-                canvas.drawRect(r, paint);
-            }
-            if(t._nodes[2] != null) {
-                Rect r = new Rect(t._nodes[2]._bounds.x, t._nodes[2]._bounds.y, t._nodes[2]._bounds.width, t._nodes[2]._bounds.height);
-                canvas.drawRect(r, paint);
-            }
-            if(t._nodes[3] != null) {
-                Rect r = new Rect(t._nodes[3]._bounds.x, t._nodes[3]._bounds.y, t._nodes[3]._bounds.width, t._nodes[3]._bounds.height);
-                canvas.drawRect(r, paint);
-            }
-        }
     }
 }

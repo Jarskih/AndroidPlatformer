@@ -2,12 +2,10 @@ package com.jarihanski.platformer;
 
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
-import android.content.res.AssetManager;
 import android.media.AudioAttributes;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Build;
-import android.os.StrictMode;
 import android.util.Log;
 
 import java.io.IOException;
@@ -18,14 +16,8 @@ public class SoundPlayer {
     private static final float DEFAULT_SFX_VOLUME = 1;
     private SoundPool _soundPool;
     private static final int MAX_STREAMS = 3;
-    public static int CRASH;
-    public static int PROJECTILE_HIT;
-    public static int DEAD;
-    public static int PROJECTILE;
-    public static int START;
-    public static int END;
-    private Context _context;
-    private HashMap _soundsMap;
+    private final Context _context;
+    private HashMap<Game.GameEvent, Integer>_soundsMap;
 
     public SoundPlayer(Context context) {
         AudioAttributes attributes = new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_GAME).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build();
@@ -80,14 +72,12 @@ public class SoundPlayer {
     }
 
     public void playSoundForGameEvent(Game.GameEvent event){
-        final float leftVolume = DEFAULT_SFX_VOLUME;
-        final float rightVolume = DEFAULT_SFX_VOLUME;
         final int priority = 1;
         final int loop = 0; //-1 loop forever, 0 play once
         final float rate = 1.0f;
         final Integer soundID = (Integer) _soundsMap.get(event);
         if(soundID != null){
-            _soundPool.play(soundID, leftVolume, rightVolume, priority, loop, rate);
+            _soundPool.play(soundID, DEFAULT_SFX_VOLUME, DEFAULT_SFX_VOLUME, priority, loop, rate);
         }
     }
 
